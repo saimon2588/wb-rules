@@ -31,7 +31,7 @@ const (
 func main() {
 
 	if os.Args[1] == "version" {
-		fmt.Println(version)
+		fmt.Printf("wb-rules version: %s\n", version)
 		os.Exit(0)
 	}
 
