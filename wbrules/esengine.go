@@ -202,6 +202,7 @@ func NewESEngine(driver wbgong.Driver, logMqttClient wbgong.MQTTClient, options 
 		"getControl":           engine.esGetControl,
 		"_wbPersistentName":    engine.esPersistentName,
 		"trackMqtt":            engine.trackMqtt,
+		"makeGoPanic":          engine.makeGoPanic,
 	})
 	engine.globalCtx.GetPropString(-1, "log")
 	engine.globalCtx.DefineFunctions(map[string]func(*ESContext) int{
@@ -236,6 +237,10 @@ func NewESEngine(driver wbgong.Driver, logMqttClient wbgong.MQTTClient, options 
 	// []
 
 	return
+}
+
+func (engine *ESEngine) makeGoPanic(ctx *ESContext) int {
+	panic("I am panic")
 }
 
 func (engine *ESEngine) exportModSearch(ctx *ESContext) {
