@@ -89,7 +89,9 @@ func main() {
 	wbgong.MaybeInitProfiling(nil)
 
 	if *webProfile != "" {
-		wbgong.Info.Println(http.ListenAndServe(*webProfile, nil))
+		go func() {
+			wbgong.Info.Println(http.ListenAndServe(*webProfile, nil))
+		}()
 	}
 
 	// prepare statsd client if required
