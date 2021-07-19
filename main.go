@@ -9,6 +9,9 @@ import (
 	"strings"
 	"syscall"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/contactless/wb-rules/wbrules"
 	"github.com/contactless/wbgong"
 
@@ -59,6 +62,8 @@ func main() {
 	persistentDbFile := flag.String("pdb", PERSISTENT_DB_FILE, "Persistent storage DB file")
 	vdevDbFile := flag.String("vdb", VIRTUAL_DEVICES_DB_FILE, "Virtual devices values DB file")
 
+	webProfile := flag.String("webprofile", "", "net/http/pprof endpoint")
+
 	wbgoso := flag.String("wbgo", "/usr/share/wb-rules/wbgo.so", "Location to wbgo.so file")
 
 	flag.Parse()
@@ -82,6 +87,10 @@ func main() {
 		wbgong.EnableMQTTDebugLog(*useSyslog)
 	}
 	wbgong.MaybeInitProfiling(nil)
+
+	if *webProfile != "" {
+		wbgong.Info.Println(http.ListenAndServe(*webProfile, nil))
+	}
 
 	// prepare statsd client if required
 	var statsdClient wbgong.StatsdClientWrapper
