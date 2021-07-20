@@ -351,7 +351,7 @@ func (ctrlProxy *ControlProxy) SetValue(value interface{}) {
 
 	ctrl := ctrlProxy.getControl()
 	if ctrl == nil {
-		wbgong.Error.Printf("failed to SetValue for unexisting control")
+		wbgong.Error.Printf("failed to SetValue for unexisting control %s/%s: %v", ctrlProxy.devProxy.name, ctrlProxy.name, value)
 		return
 	}
 
