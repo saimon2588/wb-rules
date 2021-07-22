@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/alexcesaro/statsd"
-	"github.com/contactless/wbgong"
+	"github.com/wirenboard/wbgong"
 	"github.com/stretchr/objx"
 	cron "gopkg.in/robfig/cron.v1"
 )
@@ -1370,7 +1370,7 @@ func fillControlArgs(devId, ctrlId string, ctrlDef objx.Map, args wbgong.Control
 
 	_, hasWritable := ctrlDef[VDEV_CONTROL_DESCR_PROP_WRITEABLE]
 	if hasWritable {
-		return fmt.Errorf("writeable flag is deprecated, use readonly instead: https://github.com/contactless/wb-rules/blob/master/README-readonly.md")
+		return fmt.Errorf("writeable flag is deprecated, use readonly instead: https://github.com/wirenboard/wb-rules/blob/master/README-readonly.md")
 	}
 
 	// get readonly/writeable flag
