@@ -110,7 +110,12 @@ var _WbRules = {
         if (metaField !== "") {
           ensureCell(dev, name).setMeta({ k: metaField, v: value });
         } else {
-          ensureCell(dev, name).setValue({ v: value });
+          var notify = true;
+          if (name[name.length - 1] == "~") {
+            name = name.slice(0, name.length - 1);
+            notify = false;
+          }
+          ensureCell(dev, name).setValue({ v: value, n: notify });
         }
       }
     });

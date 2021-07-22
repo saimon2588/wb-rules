@@ -1756,7 +1756,20 @@ func (engine *ESEngine) esWbCellObject(ctx *ESContext) int {
 				wbgong.Error.Printf("invalid control definition")
 				return duktape.DUK_RET_TYPE_ERROR
 			}
-			c.SetValue(m[JS_DEVPROXY_FUNC_SETVALUE_ARG])
+
+			var notifySubs = true
+			if m.Has(JS_DEVPROXY_FUNC_SETVALUE_NOTIFY) {
+				var obj = m.Get(JS_DEVPROXY_FUNC_SETVALUE_NOTIFY)
+
+				if !obj.IsBool() {
+					wbgong.Error.Printf("SetValue(%s/%s): notify field must be bool", c.devProxy.name, c.name)
+					return duktape.DUK_RET_TYPE_ERROR
+				} else {
+					notifySubs = obj.Bool()
+				}
+			}
+
+			c.SetValue(m[JS_DEVPROXY_FUNC_SETVALUE_ARG], notifySubs)
 			return 1
 		},
 		JS_DEVPROXY_FUNC_SETMETA: func(ctx *ESContext) int {

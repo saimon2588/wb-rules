@@ -344,7 +344,7 @@ func (ctrlProxy *ControlProxy) Value() (v interface{}) {
 	return
 }
 
-func (ctrlProxy *ControlProxy) SetValue(value interface{}) {
+func (ctrlProxy *ControlProxy) SetValue(value interface{}, notifySubs bool) {
 	if wbgong.DebuggingEnabled() {
 		wbgong.Debug.Printf("[ctrlProxy %s/%s] SetValue(%v)", ctrlProxy.devProxy.name, ctrlProxy.name, value)
 	}
@@ -360,13 +360,13 @@ func (ctrlProxy *ControlProxy) SetValue(value interface{}) {
 		ctrl.SetTx(tx)
 		_, isLocal = ctrl.GetDevice().(wbgong.LocalDevice)
 		if isLocal {
-			return ctrl.UpdateValue(value, true)()
+			return ctrl.UpdateValue(value, notifySubs)()
 		} else {
 			return ctrl.SetOnValue(value)()
 		}
 	})
 
-	if isLocal {
+	if isLocal && notifySubs {
 		// run update value handler immediately, don't wait for wbgong backend
 		ctrlProxy.updateValueHandler(nil, value, nil)
 	}
