@@ -359,7 +359,11 @@ func (ctrlProxy *ControlProxy) SetValue(value interface{}) {
 	err := ctrlProxy.accessDriver(func(tx wbgong.DriverTx) error {
 		ctrl.SetTx(tx)
 		_, isLocal = ctrl.GetDevice().(wbgong.LocalDevice)
-		return ctrl.SetValue(value)()
+		if isLocal {
+			return ctrl.UpdateValue(value, true)()
+		} else {
+			return ctrl.SetOnValue(value)()
+		}
 	})
 
 	if isLocal {
