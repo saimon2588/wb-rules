@@ -13,7 +13,7 @@ require (
 	github.com/pmezard/go-difflib v0.0.0-20151028094244-d8ed2627bdf0
 	github.com/stretchr/objx v0.0.0-20150928122152-1a9d0bb9f541
 	github.com/stretchr/testify v0.0.0-20160504130155-6cb3b85ef5a0
-	github.com/wirenboard/go-duktape v0.0.0-20210721090445-a529680fe6e0 // indirect
+	github.com/wirenboard/go-duktape v0.0.0-20210722142725-7a6026d96eb4 // indirect
 	golang.org/x/net v0.0.0-20160515061011-ef00b378c73f
 	golang.org/x/sys v0.0.0-20160516132347-d4feaf1a7e61
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
