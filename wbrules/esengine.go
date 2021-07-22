@@ -203,6 +203,7 @@ func NewESEngine(driver wbgong.Driver, logMqttClient wbgong.MQTTClient, options 
 		"_wbPersistentName":    engine.esPersistentName,
 		"trackMqtt":            engine.trackMqtt,
 		"makeGoPanic":          engine.makeGoPanic,
+		"makeDuktapeFatal":     engine.makeDuktapeFatal,
 	})
 	engine.globalCtx.GetPropString(-1, "log")
 	engine.globalCtx.DefineFunctions(map[string]func(*ESContext) int{
@@ -241,6 +242,11 @@ func NewESEngine(driver wbgong.Driver, logMqttClient wbgong.MQTTClient, options 
 
 func (engine *ESEngine) makeGoPanic(ctx *ESContext) int {
 	panic("I am panic")
+}
+
+func (engine *ESEngine) makeDuktapeFatal(ctx *ESContext) int {
+	ctx.Fatal(42, "generated duktape fatal error")
+	return 0
 }
 
 func (engine *ESEngine) exportModSearch(ctx *ESContext) {
