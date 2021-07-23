@@ -341,6 +341,8 @@ func (engine *ESEngine) initVdevCellPrototype(ctx *ESContext) {
 		"getError":       engine.esVdevCellGetError,
 		"setOrder":       engine.esVdevCellSetOrder,
 		"getOrder":       engine.esVdevCellGetOrder,
+		"setValue":       engine.esVdevCellSetValue,
+		"getValue":       engine.esVdevCellGetValue,
 	})
 
 	ctx.PutPropString(-2, "__wbVdevCellPrototype")
@@ -1508,6 +1510,23 @@ func (engine *ESEngine) esVdevCellGetId(ctx *ESContext) int {
 	return 1
 }
 
+func (engine *ESEngine) esVdevCellGetValue(ctx *ESContext) int {
+	ctrlProxy, duk_ret := engine.getControlFromCtx(ctx)
+	if duk_ret < 0 {
+		return duk_ret
+	}
+
+	value, err := ctrlProxy.getControl().GetValue()
+	if err != nil {
+		wbgong.Error.Printf("getValue (%s/%s) failed: %v", ctrlProxy.devProxy.name, ctrlProxy.name, err)
+		return duktape.DUK_RET_ERROR
+	}
+
+	ctx.PushJSObject(value)
+
+	return 1
+}
+
 func (engine *ESEngine) esVdevCellSetDescription(ctx *ESContext) int {
 	if !ctx.IsString(0) {
 		wbgong.Error.Printf("setDescription(): bad parameters")
@@ -1627,6 +1646,42 @@ func (engine *ESEngine) esVdevCellSetOrder(ctx *ESContext) int {
 	}
 
 	ctrlProxy.SetMeta(wbgong.CONV_META_SUBTOPIC_ORDER, fmt.Sprintf("%d", order))
+
+	return 0
+}
+
+func (engine *ESEngine) esVdevCellSetValue(ctx *ESContext) int {
+	var value interface{}
+	notifySubs := true
+
+	ctrlProxy, duk_ret := engine.getControlFromCtx(ctx)
+	if duk_ret < 0 {
+		return duk_ret
+	}
+
+	if ctx.IsObject(0) {
+		m := ctx.GetJSObject(0).(objx.Map)
+		if !m.Has(JS_CTRLPROXY_FUNC_SETVALUE_VALUE) {
+			wbgong.Error.Printf("setValue (%s/%s): no value parameter present", ctrlProxy.devProxy.name, ctrlProxy.name)
+			return duktape.DUK_RET_TYPE_ERROR
+		}
+		value = m[JS_CTRLPROXY_FUNC_SETVALUE_VALUE]
+
+		if m.Has(JS_CTRLPROXY_FUNC_SETVALUE_NOTIFY) {
+			var obj = m.Get(JS_CTRLPROXY_FUNC_SETVALUE_NOTIFY)
+
+			if !obj.IsBool() {
+				wbgong.Error.Printf("setValue (%s/%s): notify field must be bool", ctrlProxy.devProxy.name, ctrlProxy.name)
+				return duktape.DUK_RET_TYPE_ERROR
+			} else {
+				notifySubs = obj.Bool()
+			}
+		}
+	} else {
+		value = ctx.GetJSObject(0)
+	}
+
+	ctrlProxy.SetValue(value, notifySubs)
 
 	return 0
 }
