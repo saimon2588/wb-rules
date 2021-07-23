@@ -24,7 +24,7 @@ defineRule({
     whenChanged: "loopback/set_loud",
     then: function() {
         log("set_loud button pressed");
-        dev["loopback/gauge"] = 42;
+        getControl("loopback/gauge").setValue(42);
     }
 });
 
@@ -32,6 +32,9 @@ defineRule({
     whenChanged: "loopback/set_silent",
     then: function() {
         log("set_silent button pressed");
-        dev["loopback/gauge~"] = 84;
+        getControl("loopback/gauge").setValue({
+            value: 84,
+            notify: false
+        });
     }
 });
