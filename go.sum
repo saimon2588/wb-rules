@@ -16,6 +16,10 @@ github.com/wirenboard/go-duktape v0.0.0-20210723134114-881337fff8cb h1:JV1ktj/QS
 github.com/wirenboard/go-duktape v0.0.0-20210723134114-881337fff8cb/go.mod h1:RBaIu9caMBuL6Xk32Ty04qAjl/5cVSfEdCQtbWzvMQ0=
 github.com/wirenboard/wbgong v0.1.2-0.20210722205345-cb31ac8b3279 h1:GmNErkShdUZbWoC3YzpOQ6YKmh4m+C71Qc9+CoBOO8M=
 github.com/wirenboard/wbgong v0.1.2-0.20210722205345-cb31ac8b3279/go.mod h1:BsNEHgnUNQ1JIVktChmXPMtHQqrkvU7V2PyuG++6LGk=
+github.com/wirenboard/wbgong v0.1.2-0.20210726180314-f6414ecf723d h1:wbmhqsL0hbUMPQ5w2LazwRNYrZaYAToL9YIX+Xh85m8=
+github.com/wirenboard/wbgong v0.1.2-0.20210726180314-f6414ecf723d/go.mod h1:BsNEHgnUNQ1JIVktChmXPMtHQqrkvU7V2PyuG++6LGk=
+github.com/wirenboard/wbgong v0.1.2-0.20210726183202-82491f5e7183 h1:Z3GGGf3VB3rB5adzKk+DgBMMD3bV1DFXyjbbV7G6Wpc=
+github.com/wirenboard/wbgong v0.1.2-0.20210726183202-82491f5e7183/go.mod h1:BsNEHgnUNQ1JIVktChmXPMtHQqrkvU7V2PyuG++6LGk=
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da h1:b3NXsE2LusjYGGjL5bxEVZZORm/YEFFrWFjR8eFrw/c=
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 gopkg.in/alexcesaro/statsd.v2 v2.0.0 h1:FXkZSCZIH17vLCO5sO2UucTHsH9pc+17F6pl3JVCwMc=

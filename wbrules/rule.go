@@ -1,8 +1,8 @@
 package wbrules
 
 import (
-	wbgong "github.com/wirenboard/wbgong"
 	"github.com/stretchr/objx"
+	wbgong "github.com/wirenboard/wbgong"
 )
 
 const (
@@ -109,13 +109,11 @@ func (ruleCond *EdgeTriggeredRuleCondition) Check(e *ControlChangeEvent) (bool, 
 type CellChangedRuleCondition struct {
 	RuleConditionBase
 	ctrlSpec ControlSpec
-	oldValue interface{}
 }
 
 func NewCellChangedRuleCondition(ctrlSpec ControlSpec) (*CellChangedRuleCondition, error) {
 	return &CellChangedRuleCondition{
 		ctrlSpec: ctrlSpec,
-		oldValue: nil,
 	}, nil
 }
 
@@ -137,12 +135,10 @@ func (ruleCond *CellChangedRuleCondition) Check(e *ControlChangeEvent) (bool, in
 		return false, nil
 	}
 
-	v := e.Value
-	if e.IsRetained && ruleCond.oldValue == v {
+	if e.IsRetained && e.PrevValue == e.Value {
 		return false, nil
 	}
 
-	ruleCond.oldValue = v
 	return true, nil
 }
 
