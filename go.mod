@@ -11,7 +11,7 @@ require (
 	github.com/stretchr/objx v0.0.0-20150928122152-1a9d0bb9f541
 	github.com/stretchr/testify v0.0.0-20160504130155-6cb3b85ef5a0
 	github.com/wirenboard/go-duktape v0.0.0-20210723134114-881337fff8cb
-	github.com/wirenboard/wbgong v0.1.2-0.20210722205345-cb31ac8b3279
+	github.com/wirenboard/wbgong v0.1.2-0.20210726183202-82491f5e7183
 	golang.org/x/sys v0.0.0-20210423082822-04245dca01da // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/robfig/cron.v1 v1.2.0

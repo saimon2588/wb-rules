@@ -229,7 +229,8 @@ func (devProxy *DeviceProxy) isVirtual() (isLocal bool, err error) {
 	return
 }
 
-func (ctrlProxy *ControlProxy) updateValueHandler(ctrl wbgong.Control, value interface{}, tx wbgong.DriverTx) error {
+func (ctrlProxy *ControlProxy) updateValueHandler(ctrl wbgong.Control, value interface{},
+	prevValue interface{}, tx wbgong.DriverTx) error {
 	ctrlProxy.Lock()
 	defer ctrlProxy.Unlock()
 
@@ -356,8 +357,11 @@ func (ctrlProxy *ControlProxy) SetValue(value interface{}, notifySubs bool) {
 	}
 
 	isLocal := false
+	prevValue := ctrlProxy.Value()
+
 	err := ctrlProxy.accessDriver(func(tx wbgong.DriverTx) error {
 		ctrl.SetTx(tx)
+
 		_, isLocal = ctrl.GetDevice().(wbgong.LocalDevice)
 		if isLocal {
 			return ctrl.UpdateValue(value, notifySubs)()
@@ -368,7 +372,7 @@ func (ctrlProxy *ControlProxy) SetValue(value interface{}, notifySubs bool) {
 
 	if isLocal && notifySubs {
 		// run update value handler immediately, don't wait for wbgong backend
-		ctrlProxy.updateValueHandler(nil, value, nil)
+		ctrlProxy.updateValueHandler(nil, value, prevValue, nil)
 	}
 
 	if err != nil {
@@ -485,6 +489,7 @@ type ControlChangeEvent struct {
 	IsComplete bool
 	IsRetained bool
 	Value      interface{}
+	PrevValue  interface{}
 }
 
 type RuleEngineOptions struct {
@@ -787,14 +792,15 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		wbgong.Debug.Printf("[engine] driverEventHandler(event %T(%v))", event, event)
 	}
 
-	var value interface{}
+	var value, prevValue interface{}
 	var spec ControlSpec
 	isComplete := false
 	isRetained := false
 
 	switch e := event.(type) {
 	case wbgong.ControlValueEvent:
-		value, _ = e.Control.GetValue()
+		value, _ = wbgong.ToTypedValue(e.RawValue, e.Control.GetType())
+		prevValue, _ = wbgong.ToTypedValue(e.PrevRawValue, e.Control.GetType())
 		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
@@ -816,6 +822,7 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 			IsComplete: true, //TODO: find if all controls complete
 			IsRetained: isRetained,
 			Value:      ev.Value,
+			PrevValue:  nil,
 		}
 		engine.eventBuffer.PushEvent(metaCCE)
 	default:
@@ -827,6 +834,7 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		IsComplete: isComplete,
 		IsRetained: isRetained,
 		Value:      value,
+		PrevValue:  prevValue,
 	}
 
 	engine.eventBuffer.PushEvent(cce)
