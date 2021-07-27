@@ -380,10 +380,10 @@ func (ctrlProxy *ControlProxy) SetValue(value interface{}, notifySubs bool) {
 	}
 }
 
-// SetMeta sets meta field of controller
-func (ctrlProxy *ControlProxy) SetMeta(key, value string) (cce *ControlChangeEvent) {
+// SetMeta sets meta field of control
+func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChangeEvent) {
 	if wbgong.DebuggingEnabled() {
-		wbgong.Debug.Printf("[ctrlProxy %s/%s] SetMeta(%v=%v)", ctrlProxy.devProxy.name, ctrlProxy.name, key, value)
+		wbgong.Debug.Printf("[ctrlProxy %s/%s] SetMeta(%v=%v)", ctrlProxy.devProxy.name, ctrlProxy.name, key, metaValue)
 	}
 
 	ctrl := ctrlProxy.getControl()
@@ -393,6 +393,7 @@ func (ctrlProxy *ControlProxy) SetMeta(key, value string) (cce *ControlChangeEve
 	}
 
 	var spec ControlSpec
+	var ctrlRawValue string
 	isComplete := false
 	isRetained := false
 
@@ -405,48 +406,54 @@ func (ctrlProxy *ControlProxy) SetMeta(key, value string) (cce *ControlChangeEve
 		}
 		isComplete = ctrl.IsComplete()
 		isRetained = ctrl.IsRetained()
+		ctrlRawValue = ctrl.GetRawValue()
 		ctrlID := fmt.Sprintf("%s#%s", ctrl.GetId(), key)
 		spec = ControlSpec{ctrl.GetDevice().GetId(), ctrlID}
 
 		switch key {
 		case wbgong.CONV_META_SUBTOPIC_DESCRIPTION:
-			err := ctrl.SetDescription(value)()
+			err := ctrl.SetDescription(metaValue)()
 			if err != nil {
 			}
 		case wbgong.CONV_META_SUBTOPIC_ERROR:
-			return ctrl.SetError(errors.New(value))()
+			return ctrl.SetError(errors.New(metaValue))()
 		case wbgong.CONV_META_SUBTOPIC_MAX:
-			if max, err := strconv.Atoi(value); err != nil {
+			if max, err := strconv.Atoi(metaValue); err != nil {
 				return err
 			} else {
 				return ctrl.SetMax(max)()
 			}
 		case wbgong.CONV_META_SUBTOPIC_ORDER:
-			if order, err := strconv.Atoi(value); err != nil {
+			if order, err := strconv.Atoi(metaValue); err != nil {
 				return err
 			} else {
 				return ctrl.SetOrder(order)()
 			}
 		case wbgong.CONV_META_SUBTOPIC_READONLY:
-			v := value == wbgong.CONV_META_BOOL_TRUE
-			return ctrl.SetReadonly(v)()
+			if v, err := wbgong.RawValueToDataTyped(metaValue, wbgong.CONV_DATATYPE_BOOLEAN); err != nil {
+				return err
+			} else {
+				return ctrl.SetReadonly(v.(bool))()
+			}
 		case wbgong.CONV_META_SUBTOPIC_TYPE:
-			return ctrl.SetType(value)()
+			return ctrl.SetType(metaValue)()
 		case wbgong.CONV_META_SUBTOPIC_UNITS:
-			return ctrl.SetUnits(value)()
+			return ctrl.SetUnits(metaValue)()
 		}
 		return nil
 	})
 
 	if errAccess != nil {
-		wbgong.Error.Printf("control %s/%s SetMeta(%s=%s) error: %s", ctrlProxy.devProxy.name, ctrlProxy.name, key, value, errAccess)
+		wbgong.Error.Printf("control %s/%s SetMeta(%s=%s) error: %s", ctrlProxy.devProxy.name,
+			ctrlProxy.name, key, metaValue, errAccess)
 		return
 	}
 	cce = &ControlChangeEvent{
-		Spec:       spec,
-		IsComplete: isComplete,
-		IsRetained: isRetained,
-		Value:      value,
+		Spec:         spec,
+		IsComplete:   isComplete,
+		IsRetained:   isRetained,
+		RawValue:     ctrlRawValue,
+		PrevRawValue: ctrlRawValue,
 	}
 	return
 }
@@ -485,11 +492,11 @@ func (cp cronProxy) AddFunc(spec string, cmd func()) error {
 
 // ControlChangeEvent
 type ControlChangeEvent struct {
-	Spec       ControlSpec
-	IsComplete bool
-	IsRetained bool
-	Value      interface{}
-	PrevValue  interface{}
+	Spec         ControlSpec
+	IsComplete   bool
+	IsRetained   bool
+	RawValue     string
+	PrevRawValue string
 }
 
 type RuleEngineOptions struct {
@@ -792,20 +799,20 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		wbgong.Debug.Printf("[engine] driverEventHandler(event %T(%v))", event, event)
 	}
 
-	var value, prevValue interface{}
+	var value, prevValue string
 	var spec ControlSpec
 	isComplete := false
 	isRetained := false
 
 	switch e := event.(type) {
 	case wbgong.ControlValueEvent:
-		value, _ = wbgong.ToTypedValue(e.RawValue, e.Control.GetType())
-		prevValue, _ = wbgong.ToTypedValue(e.PrevRawValue, e.Control.GetType())
+		value = e.RawValue
+		prevValue = e.PrevRawValue
 		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
 	case wbgong.NewExternalDeviceControlMetaEvent:
-		value, _ = e.Control.GetValue()
+		value = e.Value
 		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
@@ -818,11 +825,11 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		metaCtrl := fmt.Sprintf("%s#%s", e.Control.GetId(), ev.Type)
 		metaSpec := ControlSpec{e.Control.GetDevice().GetId(), metaCtrl}
 		metaCCE := &ControlChangeEvent{
-			Spec:       metaSpec,
-			IsComplete: true, //TODO: find if all controls complete
-			IsRetained: isRetained,
-			Value:      ev.Value,
-			PrevValue:  nil,
+			Spec:         metaSpec,
+			IsComplete:   true, //TODO: find if all controls complete
+			IsRetained:   isRetained,
+			RawValue:     ev.Value,
+			PrevRawValue: "",
 		}
 		engine.eventBuffer.PushEvent(metaCCE)
 	default:
@@ -830,11 +837,11 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 	}
 
 	cce := &ControlChangeEvent{
-		Spec:       spec,
-		IsComplete: isComplete,
-		IsRetained: isRetained,
-		Value:      value,
-		PrevValue:  prevValue,
+		Spec:         spec,
+		IsComplete:   isComplete,
+		IsRetained:   isRetained,
+		RawValue:     value,
+		PrevRawValue: prevValue,
 	}
 
 	engine.eventBuffer.PushEvent(cce)
