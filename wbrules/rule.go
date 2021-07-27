@@ -135,7 +135,6 @@ func (ruleCond *CellChangedRuleCondition) Check(e *ControlChangeEvent) (bool, in
 		return false, nil
 	}
 
-	wbgong.Info.Printf("whenChanged(%s): %s->%s", e.Spec, e.PrevRawValue, e.RawValue)
 	if e.IsRetained && e.PrevRawValue == e.RawValue {
 		return false, nil
 	}
