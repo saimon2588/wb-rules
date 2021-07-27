@@ -826,12 +826,13 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
 	case wbgong.NewExternalDeviceControlMetaEvent:
-		rawValue = e.Control.GetRawValue()
-		value, _ = e.Control.GetValue()
-
 		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
+
+		rawValue = e.Control.GetRawValue()
+		prevRawValue = rawValue
+		value, _ = e.Control.GetValue()
 
 		// here we need to invalidate controls/devices proxy
 		atomic.AddUint32(&engine.rev, 1)
@@ -839,13 +840,14 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		// pushing event about new external meta received
 		metaCtrl := fmt.Sprintf("%s#%s", e.Control.GetId(), e.Type)
 		metaSpec := ControlSpec{e.Control.GetDevice().GetId(), metaCtrl}
+
 		metaCCE := &ControlChangeEvent{
 			Spec:         metaSpec,
 			IsComplete:   isComplete,
 			IsRetained:   isRetained,
-			RawValue:     rawValue,
-			PrevRawValue: rawValue,
-			Value:        value,
+			RawValue:     e.Value,
+			PrevRawValue: e.PrevValue,
+			Value:        e.Value, // FIXME?
 		}
 		engine.eventBuffer.PushEvent(metaCCE)
 	default:
