@@ -394,6 +394,7 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 
 	var spec ControlSpec
 	var ctrlRawValue string
+	var ctrlValue interface{}
 	isComplete := false
 	isRetained := false
 
@@ -407,6 +408,7 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 		isComplete = ctrl.IsComplete()
 		isRetained = ctrl.IsRetained()
 		ctrlRawValue = ctrl.GetRawValue()
+		ctrlValue, _ = ctrl.GetValue()
 		ctrlID := fmt.Sprintf("%s#%s", ctrl.GetId(), key)
 		spec = ControlSpec{ctrl.GetDevice().GetId(), ctrlID}
 
@@ -454,6 +456,7 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 		IsRetained:   isRetained,
 		RawValue:     ctrlRawValue,
 		PrevRawValue: ctrlRawValue,
+		Value:        ctrlValue,
 	}
 	return
 }
@@ -492,11 +495,16 @@ func (cp cronProxy) AddFunc(spec string, cmd func()) error {
 
 // ControlChangeEvent
 type ControlChangeEvent struct {
-	Spec         ControlSpec
-	IsComplete   bool
-	IsRetained   bool
+	Spec       ControlSpec
+	IsComplete bool
+	IsRetained bool
+
 	RawValue     string
 	PrevRawValue string
+
+	// this is an ugly value forwarding to old rusty rule handlers
+	// which are only consumers of this event?
+	Value interface{}
 }
 
 type RuleEngineOptions struct {
@@ -790,6 +798,7 @@ func (engine *RuleEngine) PushToEventBuffer(cce *ControlChangeEvent) {
 	engine.eventBuffer.PushEvent(cce)
 }
 
+// this method runs safely in driver loop
 func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 	if atomic.LoadUint32(&engine.active) == ENGINE_STOP {
 		return
@@ -799,20 +808,27 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		wbgong.Debug.Printf("[engine] driverEventHandler(event %T(%v))", event, event)
 	}
 
-	var value, prevValue string
+	var rawValue, prevRawValue string
+	var value interface{}
+
 	var spec ControlSpec
 	isComplete := false
 	isRetained := false
 
 	switch e := event.(type) {
 	case wbgong.ControlValueEvent:
-		value = e.RawValue
-		prevValue = e.PrevRawValue
+		wbgong.Info.Printf("[engine] ControlValueEvent(%s): %s->%s", e.Control.GetId(), e.PrevRawValue, e.RawValue)
+		rawValue = e.RawValue
+		prevRawValue = e.PrevRawValue
+		value, _ = e.Control.GetValue()
+
 		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
 	case wbgong.NewExternalDeviceControlMetaEvent:
-		value = e.Value
+		rawValue = e.Control.GetRawValue()
+		value, _ = e.Control.GetValue()
+
 		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
 		isComplete = e.Control.IsComplete()
 		isRetained = e.Control.IsRetained()
@@ -821,15 +837,15 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		atomic.AddUint32(&engine.rev, 1)
 
 		// pushing event about new external meta received
-		ev := event.(wbgong.NewExternalDeviceControlMetaEvent)
-		metaCtrl := fmt.Sprintf("%s#%s", e.Control.GetId(), ev.Type)
+		metaCtrl := fmt.Sprintf("%s#%s", e.Control.GetId(), e.Type)
 		metaSpec := ControlSpec{e.Control.GetDevice().GetId(), metaCtrl}
 		metaCCE := &ControlChangeEvent{
 			Spec:         metaSpec,
-			IsComplete:   true, //TODO: find if all controls complete
+			IsComplete:   isComplete,
 			IsRetained:   isRetained,
-			RawValue:     ev.Value,
-			PrevRawValue: "",
+			RawValue:     rawValue,
+			PrevRawValue: rawValue,
+			Value:        value,
 		}
 		engine.eventBuffer.PushEvent(metaCCE)
 	default:
@@ -840,8 +856,9 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		Spec:         spec,
 		IsComplete:   isComplete,
 		IsRetained:   isRetained,
-		RawValue:     value,
-		PrevRawValue: prevValue,
+		RawValue:     rawValue,
+		PrevRawValue: prevRawValue,
+		Value:        value,
 	}
 
 	engine.eventBuffer.PushEvent(cce)

@@ -135,7 +135,8 @@ func (ruleCond *CellChangedRuleCondition) Check(e *ControlChangeEvent) (bool, in
 		return false, nil
 	}
 
-	if e.IsRetained && e.PrevValue == e.Value {
+	wbgong.Info.Printf("whenChanged(%s): %s->%s", e.Spec, e.PrevRawValue, e.RawValue)
+	if e.IsRetained && e.PrevRawValue == e.RawValue {
 		return false, nil
 	}
 
@@ -304,7 +305,7 @@ func (rule *Rule) Check(e *ControlChangeEvent) {
 			args = objx.New(map[string]interface{}{
 				"newValue": newValue,
 			})
-		case e != nil:
+		case e != nil: // newValue == nil
 			args = objx.New(map[string]interface{}{
 				"device":   e.Spec.DeviceId,
 				"cell":     e.Spec.ControlId,
