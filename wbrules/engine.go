@@ -393,10 +393,9 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 	}
 
 	var spec ControlSpec
-	var ctrlRawValue string
-	var ctrlValue interface{}
 	isComplete := false
 	isRetained := false
+	var prevMetaRawValue string
 
 	isLocal := false
 	errAccess := ctrlProxy.accessDriver(func(tx wbgong.DriverTx) error {
@@ -407,8 +406,13 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 		}
 		isComplete = ctrl.IsComplete()
 		isRetained = ctrl.IsRetained()
-		ctrlRawValue = ctrl.GetRawValue()
-		ctrlValue, _ = ctrl.GetValue()
+
+		allMeta := ctrl.GetMeta()
+		var ok bool
+		if prevMetaRawValue, ok = allMeta[key]; !ok {
+			prevMetaRawValue = ""
+		}
+
 		ctrlID := fmt.Sprintf("%s#%s", ctrl.GetId(), key)
 		spec = ControlSpec{ctrl.GetDevice().GetId(), ctrlID}
 
@@ -454,9 +458,9 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 		Spec:         spec,
 		IsComplete:   isComplete,
 		IsRetained:   isRetained,
-		RawValue:     ctrlRawValue,
-		PrevRawValue: ctrlRawValue,
-		Value:        ctrlValue,
+		RawValue:     metaValue,
+		PrevRawValue: prevMetaRawValue,
+		Value:        metaValue,
 	}
 	return
 }
