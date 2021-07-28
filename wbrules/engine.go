@@ -821,7 +821,6 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 
 	switch e := event.(type) {
 	case wbgong.ControlValueEvent:
-		wbgong.Info.Printf("[engine] ControlValueEvent(%s): %s->%s", e.Control.GetId(), e.PrevRawValue, e.RawValue)
 		rawValue = e.RawValue
 		prevRawValue = e.PrevRawValue
 		value, _ = e.Control.GetValue()
@@ -851,7 +850,7 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 			IsRetained:   isRetained,
 			RawValue:     e.Value,
 			PrevRawValue: e.PrevValue,
-			Value:        e.Value, // FIXME?
+			Value:        e.Value,
 		}
 		engine.eventBuffer.PushEvent(metaCCE)
 	default:
