@@ -821,16 +821,16 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 
 		value, err = ctrl.GetValue()
 		if err != nil {
-			wbgong.Error.Printf("%s: failed to convert value %s",
+			wbgong.Info.Printf("%s: failed to convert value '%s', passing raw",
 				spec.String(), ctrl.GetRawValue())
-			value = nil
+			value = ctrl.GetRawValue()
 		}
 
 		prevValue, err = wbgong.ToTypedValue(e.PrevRawValue, ctrl.GetType())
 		if err != nil {
-			wbgong.Error.Printf("%s: failed to convert previous value %s",
+			wbgong.Info.Printf("%s: failed to convert previous value '%s', passing raw",
 				spec.String(), e.PrevRawValue)
-			prevValue = nil
+			prevValue = e.PrevRawValue
 		}
 
 		isComplete = ctrl.IsComplete()
@@ -846,9 +846,9 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 
 		value, err = ctrl.GetValue()
 		if err != nil {
-			wbgong.Error.Printf("%s: failed to convert value %s",
+			wbgong.Info.Printf("%s: failed to convert value '%s', passing raw",
 				spec.String(), ctrl.GetRawValue())
-			value = nil
+			value = ctrl.GetRawValue()
 		}
 		prevValue = value
 
