@@ -395,7 +395,7 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 	var spec ControlSpec
 	isComplete := false
 	isRetained := false
-	var prevMetaRawValue string
+	var prevMetaValue string
 
 	isLocal := false
 	errAccess := ctrlProxy.accessDriver(func(tx wbgong.DriverTx) error {
@@ -409,8 +409,8 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 
 		allMeta := ctrl.GetMeta()
 		var ok bool
-		if prevMetaRawValue, ok = allMeta[key]; !ok {
-			prevMetaRawValue = ""
+		if prevMetaValue, ok = allMeta[key]; !ok {
+			prevMetaValue = ""
 		}
 
 		ctrlID := fmt.Sprintf("%s#%s", ctrl.GetId(), key)
@@ -455,12 +455,11 @@ func (ctrlProxy *ControlProxy) SetMeta(key, metaValue string) (cce *ControlChang
 		return
 	}
 	cce = &ControlChangeEvent{
-		Spec:         spec,
-		IsComplete:   isComplete,
-		IsRetained:   isRetained,
-		RawValue:     metaValue,
-		PrevRawValue: prevMetaRawValue,
-		Value:        metaValue,
+		Spec:       spec,
+		IsComplete: isComplete,
+		IsRetained: isRetained,
+		Value:      metaValue,
+		PrevValue:  prevMetaValue,
 	}
 	return
 }
