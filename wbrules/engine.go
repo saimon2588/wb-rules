@@ -502,13 +502,8 @@ type ControlChangeEvent struct {
 	Spec       ControlSpec
 	IsComplete bool
 	IsRetained bool
-
-	RawValue     string
-	PrevRawValue string
-
-	// this is an ugly value forwarding to old rusty rule handlers
-	// which are only consumers of this event?
-	Value interface{}
+	Value      interface{}
+	PrevValue  interface{}
 }
 
 type RuleEngineOptions struct {
@@ -812,8 +807,7 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		wbgong.Debug.Printf("[engine] driverEventHandler(event %T(%v))", event, event)
 	}
 
-	var rawValue, prevRawValue string
-	var value interface{}
+	var value, prevValue interface{}
 
 	var spec ControlSpec
 	isComplete := false
@@ -821,21 +815,43 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 
 	switch e := event.(type) {
 	case wbgong.ControlValueEvent:
-		rawValue = e.RawValue
-		prevRawValue = e.PrevRawValue
-		value, _ = e.Control.GetValue()
+		ctrl := e.Control
+		spec = ControlSpec{ctrl.GetDevice().GetId(), ctrl.GetId()}
 
-		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
-		isComplete = e.Control.IsComplete()
-		isRetained = e.Control.IsRetained()
+		var err error
+
+		value, err = ctrl.GetValue()
+		if err != nil {
+			wbgong.Error.Printf("%s: failed to convert value %s",
+				spec.String(), ctrl.GetRawValue())
+			value = nil
+		}
+
+		prevValue, err = wbgong.ToTypedValue(e.PrevRawValue, ctrl.GetType())
+		if err != nil {
+			wbgong.Error.Printf("%s: failed to convert previous value %s",
+				spec.String(), e.PrevRawValue)
+			prevValue = nil
+		}
+
+		isComplete = ctrl.IsComplete()
+		isRetained = ctrl.IsRetained()
 	case wbgong.NewExternalDeviceControlMetaEvent:
-		spec = ControlSpec{e.Control.GetDevice().GetId(), e.Control.GetId()}
-		isComplete = e.Control.IsComplete()
-		isRetained = e.Control.IsRetained()
+		ctrl := e.Control
+		spec = ControlSpec{ctrl.GetDevice().GetId(), ctrl.GetId()}
 
-		rawValue = e.Control.GetRawValue()
-		prevRawValue = rawValue
-		value, _ = e.Control.GetValue()
+		isComplete = ctrl.IsComplete()
+		isRetained = ctrl.IsRetained()
+
+		var err error
+
+		value, err = ctrl.GetValue()
+		if err != nil {
+			wbgong.Error.Printf("%s: failed to convert value %s",
+				spec.String(), ctrl.GetRawValue())
+			value = nil
+		}
+		prevValue = value
 
 		// here we need to invalidate controls/devices proxy
 		atomic.AddUint32(&engine.rev, 1)
@@ -845,12 +861,11 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 		metaSpec := ControlSpec{e.Control.GetDevice().GetId(), metaCtrl}
 
 		metaCCE := &ControlChangeEvent{
-			Spec:         metaSpec,
-			IsComplete:   isComplete,
-			IsRetained:   isRetained,
-			RawValue:     e.Value,
-			PrevRawValue: e.PrevValue,
-			Value:        e.Value,
+			Spec:       metaSpec,
+			IsComplete: isComplete,
+			IsRetained: isRetained,
+			Value:      e.Value,
+			PrevValue:  e.PrevValue,
 		}
 		engine.eventBuffer.PushEvent(metaCCE)
 	default:
@@ -858,12 +873,11 @@ func (engine *RuleEngine) driverEventHandler(event wbgong.DriverEvent) {
 	}
 
 	cce := &ControlChangeEvent{
-		Spec:         spec,
-		IsComplete:   isComplete,
-		IsRetained:   isRetained,
-		RawValue:     rawValue,
-		PrevRawValue: prevRawValue,
-		Value:        value,
+		Spec:       spec,
+		IsComplete: isComplete,
+		IsRetained: isRetained,
+		Value:      value,
+		PrevValue:  prevValue,
 	}
 
 	engine.eventBuffer.PushEvent(cce)
